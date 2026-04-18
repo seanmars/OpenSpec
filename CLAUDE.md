@@ -63,7 +63,3 @@ The `openspec/` directory at the repo root is OpenSpec tracking itself — real 
 
 1. `~/.openspec/` — global config (profiles, tool preferences)
 2. `openspec/config.yaml` — per-project config (schema, context, tool list)
-
-## Telemetry
-
-PostHog analytics. Disabled via env var `OPENSPEC_TELEMETRY=0` or `openspec config set telemetry false`.

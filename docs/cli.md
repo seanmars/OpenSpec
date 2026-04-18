@@ -787,10 +787,7 @@ openspec config path
 openspec config list
 
 # Get a specific value
-openspec config get telemetry.enabled
-
-# Set a value
-openspec config set telemetry.enabled false
+openspec config get profile
 
 # Set a string value explicitly
 openspec config set user.name "My Name" --string
@@ -920,8 +917,6 @@ openspec completion uninstall
 
 | Variable | Description |
 |----------|-------------|
-| `OPENSPEC_TELEMETRY` | Set to `0` to disable telemetry |
-| `DO_NOT_TRACK` | Set to `1` to disable telemetry (standard DNT signal) |
 | `OPENSPEC_CONCURRENCY` | Default concurrency for bulk validation (default: 6) |
 | `EDITOR` or `VISUAL` | Editor for `openspec config edit` |
 | `NO_COLOR` | Disable color output when set |

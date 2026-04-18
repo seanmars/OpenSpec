@@ -104,16 +104,9 @@ The system SHALL include relevant metadata in the GitHub Issue body.
   - Environment variables
   - IP addresses
 
-### Requirement: Feedback always works
+### Requirement: Feedback in CI environments
 
-The system SHALL allow feedback submission regardless of telemetry settings.
-
-#### Scenario: Feedback with telemetry disabled
-
-- **WHEN** user has disabled telemetry via `OPENSPEC_TELEMETRY=0`
-- **AND** user runs `openspec feedback "message"`
-- **THEN** the feedback is still submitted via `gh` CLI
-- **AND** telemetry events are not sent
+The system SHALL allow feedback submission from any environment.
 
 #### Scenario: Feedback in CI environment
 
