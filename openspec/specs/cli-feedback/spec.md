@@ -104,9 +104,9 @@ The system SHALL include relevant metadata in the GitHub Issue body.
   - Environment variables
   - IP addresses
 
-### Requirement: Feedback in CI environments
+### Requirement: Feedback always works
 
-The system SHALL allow feedback submission from any environment.
+The system SHALL allow feedback submission regardless of telemetry settings.
 
 #### Scenario: Feedback in CI environment
 
