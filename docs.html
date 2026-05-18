@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OpenSpec 完整架構文件</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" />
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg-elev: #161b22;
+    --bg-card: #1a2230;
+    --border: #2d3748;
+    --text: #e6edf3;
+    --text-dim: #8b949e;
+    --text-faint: #6e7681;
+    --accent: #58a6ff;
+    --accent-2: #7ee787;
+    --accent-3: #ffa657;
+    --accent-4: #d2a8ff;
+    --danger: #f85149;
+    --warn: #f0883e;
+    --shadow: 0 4px 20px rgba(0,0,0,0.4);
+    --radius: 10px;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    font-size: 15px;
+  }
+  /* Layout */
+  .app { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
+  aside.sidebar {
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    background: var(--bg-elev);
+    border-right: 1px solid var(--border);
+    padding: 24px 20px;
+  }
+  main.content { padding: 40px 56px 120px; max-width: 1200px; }
+  /* Sidebar */
+  .brand { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .brand .dot { color: var(--accent); }
+  .brand-sub { color: var(--text-dim); font-size: 12px; margin-bottom: 22px; }
+  nav.toc ul { list-style: none; padding: 0; margin: 0; }
+  nav.toc li { margin: 2px 0; }
+  nav.toc a {
+    display: block; padding: 6px 10px; border-radius: 6px;
+    color: var(--text-dim); text-decoration: none; font-size: 13.5px;
+    border-left: 2px solid transparent;
+    transition: all .15s;
+  }
+  nav.toc a:hover { color: var(--text); background: rgba(88, 166, 255, 0.08); }
+  nav.toc a.active { color: var(--accent); background: rgba(88, 166, 255, 0.12); border-left-color: var(--accent); }
+  nav.toc .group-title { color: var(--text-faint); text-transform: uppercase; font-size: 11px; letter-spacing: 1px; padding: 14px 10px 4px; }
+  /* Hero */
+  .hero {
+    padding: 48px 40px;
+    background: linear-gradient(135deg, #1a2746 0%, #2a1a4d 60%, #4d1a35 100%);
+    border-radius: var(--radius);
+    margin-bottom: 40px;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(circle at 20% 0%, rgba(88,166,255,.18), transparent 50%),
+                radial-gradient(circle at 80% 100%, rgba(210,168,255,.18), transparent 50%);
+    pointer-events: none;
+  }
+  .hero h1 { font-size: 38px; margin: 0 0 12px; font-weight: 800; letter-spacing: -0.5px; }
+  .hero .tag { color: var(--text-dim); font-size: 16px; max-width: 720px; margin: 0; }
+  .hero .badges { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; position: relative; }
+  .badge {
+    background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 10px; font-size: 12.5px;
+    color: var(--text);
+  }
+  .badge.accent { color: var(--accent); }
+  /* Headings */
+  h2 {
+    font-size: 28px; margin: 56px 0 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    letter-spacing: -0.3px;
+  }
+  h2 .num {
+    display: inline-block;
+    color: var(--accent);
+    margin-right: 12px;
+    font-family: var(--mono);
+    font-size: 22px;
+  }
+  h3 { font-size: 20px; margin: 32px 0 12px; color: var(--accent-2); }
+  h4 { font-size: 16px; margin: 22px 0 10px; color: var(--accent-3); }
+  p { color: #cbd5e0; }
+  /* Cards */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin: 16px 0;
+    box-shadow: var(--shadow);
+  }
+  .card.tight { padding: 14px 18px; }
+  .grid { display: grid; gap: 16px; }
+  .grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 1000px) { .grid.cols-3, .grid.cols-4 { grid-template-columns: repeat(2, 1fr); } .app { grid-template-columns: 1fr; } aside.sidebar { position: relative; height: auto; }}
+  /* Code */
+  pre[class*="language-"] {
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    font-size: 13px;
+    margin: 12px 0;
+  }
+  code { font-family: var(--mono); font-size: 13.5px; }
+  :not(pre) > code {
+    background: rgba(110, 118, 129, 0.18);
+    color: var(--accent-3);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+  /* Mermaid */
+  .mermaid { background: var(--bg-card); padding: 24px; border-radius: var(--radius); border: 1px solid var(--border); margin: 16px 0; overflow: auto; text-align: center; }
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13.5px; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { background: var(--bg-elev); color: var(--accent); font-weight: 600; font-size: 13px; }
+  td code { font-size: 12.5px; }
+  tr:hover td { background: rgba(88, 166, 255, 0.04); }
+  /* Tabs */
+  .tabs { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin: 16px 0; }
+  .tab-head { display: flex; background: var(--bg-elev); border-bottom: 1px solid var(--border); overflow-x: auto; }
+  .tab-head button {
+    background: transparent; border: 0; padding: 10px 18px; color: var(--text-dim);
+    cursor: pointer; font-size: 13.5px; font-family: inherit;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+  }
+  .tab-head button:hover { color: var(--text); }
+  .tab-head button.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--bg-card); }
+  .tab-body { padding: 18px; background: var(--bg-card); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  /* Steps */
+  .steps { counter-reset: step; padding-left: 0; list-style: none; }
+  .steps li {
+    counter-increment: step;
+    position: relative;
+    padding: 10px 14px 10px 50px;
+    margin: 10px 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .steps li::before {
+    content: counter(step);
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    width: 28px; height: 28px;
+    background: var(--accent); color: #0d1117;
+    border-radius: 50%; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+  /* File tree */
+  .tree { font-family: var(--mono); font-size: 13px; line-height: 1.9; }
+  .tree .dir { color: var(--accent); font-weight: 600; }
+  .tree .file { color: #cbd5e0; }
+  .tree .cmt { color: var(--text-faint); margin-left: 12px; }
+  /* Callouts */
+  .callout { border-left: 4px solid; padding: 14px 18px; border-radius: 6px; margin: 16px 0; background: var(--bg-card); }
+  .callout.tip { border-color: var(--accent-2); }
+  .callout.warn { border-color: var(--warn); }
+  .callout.danger { border-color: var(--danger); }
+  .callout.info { border-color: var(--accent); }
+  .callout strong { color: var(--text); }
+  /* Pills */
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; margin-right: 6px; }
+  .pill.b { background: rgba(88,166,255,.15); color: var(--accent); }
+  .pill.g { background: rgba(126,231,135,.15); color: var(--accent-2); }
+  .pill.o { background: rgba(255,166,87,.15); color: var(--accent-3); }
+  .pill.p { background: rgba(210,168,255,.15); color: var(--accent-4); }
+  .pill.r { background: rgba(248,81,73,.15); color: var(--danger); }
+  /* Details */
+  details {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+    margin: 10px 0; padding: 0;
+  }
+  details summary {
+    padding: 12px 18px; cursor: pointer; font-weight: 600;
+    list-style: none; display: flex; align-items: center;
+  }
+  details summary::before {
+    content: "▶"; margin-right: 10px; font-size: 11px; color: var(--accent);
+    transition: transform .15s;
+  }
+  details[open] summary::before { transform: rotate(90deg); }
+  details .inner { padding: 0 18px 16px; }
+  /* Tech stack icon grid */
+  .stack-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
+  .stack-item {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px;
+  }
+  .stack-item .name { font-weight: 700; font-size: 14px; }
+  .stack-item .name .v { color: var(--text-faint); font-size: 12px; font-weight: 500; margin-left: 4px; }
+  .stack-item .role { color: var(--text-dim); font-size: 12.5px; margin-top: 4px; }
+  /* Footer */
+  footer { margin-top: 80px; padding-top: 28px; border-top: 1px solid var(--border); color: var(--text-faint); font-size: 13px; text-align: center; }
+  /* Anchor offset */
+  section { scroll-margin-top: 20px; }
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 5px; }
+  ::-webkit-scrollbar-thumb:hover { background: #484f58; }
+  /* Diagram caption */
+  .caption { color: var(--text-faint); font-size: 12.5px; text-align: center; margin-top: -8px; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============= SIDEBAR ============= -->
+  <aside class="sidebar">
+    <div class="brand">Open<span class="dot">·</span>Spec</div>
+    <div class="brand-sub">完整架構與流程文件 · v1.3.1</div>
+    <nav class="toc">
+      <div class="group-title">總覽</div>
+      <ul>
+        <li><a href="#overview">1 · 專案是什麼</a></li>
+        <li><a href="#stack">2 · 技術 stack</a></li>
+        <li><a href="#layers">3 · 分層架構</a></li>
+      </ul>
+      <div class="group-title">結構</div>
+      <ul>
+        <li><a href="#tree">4 · 目錄結構</a></li>
+        <li><a href="#entry">5 · 入口點</a></li>
+        <li><a href="#build">6 · Build 與打包</a></li>
+        <li><a href="#scripts">7 · 所有 scripts</a></li>
+      </ul>
+      <div class="group-title">執行流程</div>
+      <ul>
+        <li><a href="#cli">8 · CLI 命令地圖</a></li>
+        <li><a href="#init-flow">9 · init 完整流程</a></li>
+        <li><a href="#workflow">10 · 工作流引擎</a></li>
+        <li><a href="#artifact">11 · Artifact Graph</a></li>
+        <li><a href="#validation">12 · Validation 系統</a></li>
+      </ul>
+      <div class="group-title">擴展點</div>
+      <ul>
+        <li><a href="#adapter">13 · AI 工具 Adapter</a></li>
+        <li><a href="#profile">14 · Profile / Delivery</a></li>
+        <li><a href="#extend">15 · 如何擴展</a></li>
+        <li><a href="#fork">16 · 客製化指南</a></li>
+      </ul>
+      <div class="group-title">維運</div>
+      <ul>
+        <li><a href="#release">17 · 發布與 CI</a></li>
+        <li><a href="#testing">18 · 測試策略</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- ============= CONTENT ============= -->
+  <main class="content">
+
+    <!-- HERO -->
+    <div class="hero">
+      <h1>OpenSpec 完整架構文件</h1>
+      <p class="tag">本文件以 <code>@fission-ai/openspec v1.3.1</code> 原始碼為基底, 詳細拆解 OpenSpec CLI 工具的入口、build、命令、工作流引擎、AI 工具 adapter 系統, 以及怎麼擴展或 fork 出自己的版本.</p>
+      <div class="badges">
+        <span class="badge accent">TypeScript</span>
+        <span class="badge accent">Node.js &ge;20.19</span>
+        <span class="badge accent">ESM</span>
+        <span class="badge">Commander.js</span>
+        <span class="badge">Inquirer</span>
+        <span class="badge">Vitest</span>
+        <span class="badge">Zod</span>
+        <span class="badge">28+ AI 工具</span>
+      </div>
+    </div>
+
+    <!-- 1 OVERVIEW -->
+    <section id="overview">
+      <h2><span class="num">01</span>專案是什麼</h2>
+      <p>
+        <strong>OpenSpec</strong> 是一套「規格驅動開發 (spec-driven development)」CLI 工具.
+        它的目標不是直接寫程式碼, 而是替 AI coding agent (Claude Code, Cursor, Codex, Gemini, 28+ 工具) 產生一致的
+        <em>slash command</em> 與 <em>agent skill</em> 檔案, 把開發流程切成可追蹤的 artifact:
+        <code>proposal &rarr; specs &rarr; design &rarr; tasks &rarr; apply &rarr; archive</code>.
+      </p>
+
+      <div class="grid cols-3">
+        <div class="card tight">
+          <h4 style="margin-top:0;color:var(--accent)">輸入</h4>
+          <p style="margin:0">使用者在 AI 工具裡輸入 <code>/opsx:propose "加深色模式"</code></p>
+        </div>
+        <div class="card tight">
+          <h4 style="margin-top:0;color:var(--accent-3)">中介</h4>
+          <p style="margin:0">OpenSpec 預先產生的 skill / command 引導 AI 建立 spec, design, tasks 檔案</p>
+        </div>
+        <div class="card tight">
+          <h4 style="margin-top:0;color:var(--accent-2)">輸出</h4>
+          <p style="margin:0">可驗證的 <code>openspec/changes/&lt;name&gt;/</code> 目錄結構, 並能 archive 回到 specs</p>
+        </div>
+      </div>
+
+      <h3>核心心智模型</h3>
+      <div class="mermaid">
+flowchart LR
+  U[使用者意圖] -->|提案| P[proposal.md]
+  P --> S[specs/**/*.md]
+  P --> D[design.md]
+  S --> T[tasks.md]
+  D --> T
+  T -->|apply| C[實作程式碼]
+  C -->|archive| A[openspec/specs<br/>升級的事實規格]
+  style P fill:#1a2746,stroke:#58a6ff
+  style S fill:#1a2a35,stroke:#7ee787
+  style D fill:#2a1a35,stroke:#d2a8ff
+  style T fill:#2a2b1a,stroke:#ffa657
+  style A fill:#0d2a1a,stroke:#7ee787,color:#7ee787
+      </div>
+      <p class="caption">OpenSpec 把「變更」(change) 與「事實規格」(spec) 切開: change 描述要怎麼從現況走到目標, archive 後合併回 spec</p>
+    </section>
+
+    <!-- 2 STACK -->
+    <section id="stack">
+      <h2><span class="num">02</span>技術 Stack</h2>
+      <p>純 Node.js CLI, 沒有資料庫, 沒有伺服器. 全部都靠 npm package + 檔案系統運作.</p>
+
+      <h3>Runtime 與語言</h3>
+      <div class="stack-grid">
+        <div class="stack-item"><div class="name">Node.js <span class="v">&ge; 20.19.0</span></div><div class="role">ESM 模組, package.json <code>"type": "module"</code></div></div>
+        <div class="stack-item"><div class="name">TypeScript <span class="v">5.9.3</span></div><div class="role">target ES2022, NodeNext, strict 模式</div></div>
+        <div class="stack-item"><div class="name">pnpm <span class="v">v9</span></div><div class="role">官方 lockfile 在 CI 強制 frozen, 也保留了 package-lock.json</div></div>
+      </div>
+
+      <h3>Runtime dependencies</h3>
+      <div class="stack-grid">
+        <div class="stack-item"><div class="name">commander <span class="v">^14</span></div><div class="role">CLI 命令樹, hooks (preAction/postAction)</div></div>
+        <div class="stack-item"><div class="name">@inquirer/prompts <span class="v">^7</span></div><div class="role">互動式提問</div></div>
+        <div class="stack-item"><div class="name">@inquirer/core <span class="v">^10</span></div><div class="role">自製 searchable multi-select</div></div>
+        <div class="stack-item"><div class="name">chalk <span class="v">^5</span></div><div class="role">終端機顏色</div></div>
+        <div class="stack-item"><div class="name">ora <span class="v">^8</span></div><div class="role">spinner 進度條</div></div>
+        <div class="stack-item"><div class="name">fast-glob <span class="v">^3</span></div><div class="role">高速 glob, 用於 spec 檔案匹配</div></div>
+        <div class="stack-item"><div class="name">yaml <span class="v">^2</span></div><div class="role">解析 schema.yaml, config.yaml</div></div>
+        <div class="stack-item"><div class="name">zod <span class="v">^4</span></div><div class="role">spec / change schema 驗證</div></div>
+      </div>
+
+      <h3>Dev / 工具鏈</h3>
+      <div class="stack-grid">
+        <div class="stack-item"><div class="name">vitest <span class="v">^3</span></div><div class="role">單元 + e2e 測試, 含 UI 與 coverage</div></div>
+        <div class="stack-item"><div class="name">eslint <span class="v">^9</span></div><div class="role">flat config, 搭配 typescript-eslint</div></div>
+        <div class="stack-item"><div class="name">@changesets/cli</div><div class="role">語意化版本與 changelog 管理</div></div>
+        <div class="stack-item"><div class="name">Nix flake</div><div class="role">為 NixOS 使用者提供可重現的 build</div></div>
+      </div>
+
+      <div class="callout info">
+        <strong>觀察:</strong> OpenSpec 故意把 runtime dependency 控制在 <strong>8 個</strong>. 任何新增依賴都需要在 PR 中justify, 這是 brownfield CLI 工具的好習慣 — 安裝越快, 使用者越愛.
+      </div>
+    </section>
+
+    <!-- 3 LAYERS -->
+    <section id="layers">
+      <h2><span class="num">03</span>分層架構</h2>
+      <p>整個 codebase 可以拆成「四層 + 兩個橫切關注點」.</p>
+
+      <div class="mermaid">
+flowchart TB
+  subgraph L1["Layer 1 · 入口 (bin/openspec.js)"]
+    BIN["bin/openspec.js<br/>1 行 import"]
+  end
+  subgraph L2["Layer 2 · CLI 註冊 (src/cli/index.ts)"]
+    CMD["Commander program<br/>所有 command 註冊"]
+  end
+  subgraph L3["Layer 3 · 命令實作 (src/commands/*)"]
+    INIT[init]
+    LIST[list]
+    SHOW[show]
+    VAL[validate]
+    ARC[archive]
+    WF[workflow:<br/>status / instructions / new]
+  end
+  subgraph L4["Layer 4 · 核心邏輯 (src/core/*)"]
+    PARSE[parsers]
+    VALC[validation]
+    GRAPH[artifact-graph]
+    GEN[command-generation]
+    PROF[profiles + global-config]
+    TMPL[templates/workflows]
+  end
+  subgraph L5["Cross-cutting"]
+    UTIL[utils:<br/>file-system, shell, match]
+    UI[ui + prompts:<br/>welcome screen, multi-select]
+  end
+  BIN --> CMD
+  CMD --> INIT & LIST & SHOW & VAL & ARC & WF
+  INIT --> GEN & PROF & TMPL
+  LIST --> PARSE
+  SHOW --> PARSE
+  VAL --> PARSE & VALC
+  ARC --> PARSE & VALC
+  WF --> GRAPH & TMPL
+  GEN --> TMPL
+  L3 -.uses.-> L5
+  L4 -.uses.-> L5
+  style L1 fill:#1a2746,stroke:#58a6ff
+  style L2 fill:#2a1a35,stroke:#d2a8ff
+  style L3 fill:#2a2b1a,stroke:#ffa657
+  style L4 fill:#0d2a1a,stroke:#7ee787
+  style L5 fill:#2a1a1a,stroke:#f85149
+      </div>
+
+      <table>
+        <thead><tr><th>層</th><th>主要職責</th><th>對外暴露</th></tr></thead>
+        <tbody>
+          <tr><td><span class="pill b">L1</span> bin</td><td>npm 安裝後 PATH 可呼叫的 shim</td><td><code>openspec</code> 指令</td></tr>
+          <tr><td><span class="pill p">L2</span> cli</td><td>Commander 註冊全部 command 與選項解析</td><td><code>dist/cli/index.js</code></td></tr>
+          <tr><td><span class="pill o">L3</span> commands</td><td>每個動詞一個檔案; 接收 options, 呼叫 core</td><td>各 Command class</td></tr>
+          <tr><td><span class="pill g">L4</span> core</td><td>純邏輯; 解析 markdown / 驗證 / 產生 skill / 操作檔案</td><td>可被當函式庫 import (見 <code>src/index.ts</code>)</td></tr>
+          <tr><td><span class="pill r">X</span> utils + ui</td><td>跨平台檔案/路徑/字串工具, 互動 UI 元件</td><td>內部使用</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 4 TREE -->
+    <section id="tree">
+      <h2><span class="num">04</span>目錄結構</h2>
+      <p>點開每個區塊看細節. 帶 <span class="pill b">入口</span> 標籤的是執行起點; 帶 <span class="pill g">擴展點</span> 的是你最常修改的地方.</p>
+
+      <details open>
+        <summary>根目錄 <span class="pill b" style="margin-left:8px">總覽</span></summary>
+        <div class="inner">
+<pre class="tree">
+<span class="dir">OpenSpec/</span>
+├── <span class="dir">bin/</span>              <span class="cmt"># npm bin shim, package.json 指向這裡</span>
+│   └── openspec.js   <span class="cmt"># 1 行: import '../dist/cli/index.js'</span>
+├── <span class="dir">src/</span>              <span class="cmt"># TypeScript 原始碼, build 來源</span>
+├── <span class="dir">dist/</span>             <span class="cmt"># tsc 編譯輸出 (build 產物, gitignored)</span>
+├── <span class="dir">schemas/</span>          <span class="cmt"># workflow schema 與 markdown template</span>
+│   └── spec-driven/
+│       ├── schema.yaml
+│       └── templates/
+├── <span class="dir">scripts/</span>          <span class="cmt"># 輔助腳本 (postinstall, version check)</span>
+├── <span class="dir">test/</span>             <span class="cmt"># vitest 測試, 含 e2e + fixtures</span>
+├── <span class="dir">openspec/</span>         <span class="cmt"># 專案本身也用 OpenSpec 管理 (dogfooding)</span>
+│   ├── config.yaml
+│   ├── specs/
+│   ├── changes/
+│   └── explorations/
+├── <span class="dir">docs/</span>             <span class="cmt"># 額外手冊</span>
+├── <span class="dir">.changeset/</span>       <span class="cmt"># changesets 版本管理</span>
+├── <span class="dir">.github/workflows/</span> <span class="cmt"># CI / release workflows</span>
+├── build.js          <span class="cmt"># tsc wrapper, 清 dist + 編譯</span>
+├── tsconfig.json     <span class="cmt"># ES2022 + NodeNext + strict</span>
+├── eslint.config.js  <span class="cmt"># flat config</span>
+├── vitest.config.ts
+├── flake.nix         <span class="cmt"># Nix 打包定義</span>
+└── package.json      <span class="cmt"># bin/scripts/exports 設定</span>
+</pre>
+        </div>
+      </details>
+
+      <details>
+        <summary><code>src/</code> 細節 <span class="pill g" style="margin-left:8px">擴展點</span></summary>
+        <div class="inner">
+<pre class="tree">
+<span class="dir">src/</span>
+├── index.ts                  <span class="cmt"># library 出口: export cli + core</span>
+│
+├── <span class="dir">cli/</span>
+│   └── index.ts              <span class="cmt"># Commander program, 500 行, 全部 command 註冊</span>
+│
+├── <span class="dir">commands/</span>             <span class="cmt"># 命令實作層, 一個動詞一個檔</span>
+│   ├── change.ts             <span class="cmt"># (deprecated) noun-based</span>
+│   ├── completion.ts         <span class="cmt"># bash/zsh/fish/pwsh 自動補全</span>
+│   ├── config.ts             <span class="cmt"># 全域設定 CLI</span>
+│   ├── feedback.ts           <span class="cmt"># 提交 GitHub issue 連結</span>
+│   ├── schema.ts             <span class="cmt"># schema fork/init/which/validate</span>
+│   ├── show.ts               <span class="cmt"># 顯示 change/spec 內容</span>
+│   ├── spec.ts               <span class="cmt"># spec 子命令</span>
+│   ├── validate.ts           <span class="cmt"># 驗證 change/spec</span>
+│   └── <span class="dir">workflow/</span>             <span class="cmt"># artifact-driven 命令群</span>
+│       ├── index.ts
+│       ├── status.ts         <span class="cmt"># 顯示 artifact 完成狀態</span>
+│       ├── instructions.ts   <span class="cmt"># 輸出某 artifact 的產生指令</span>
+│       ├── new-change.ts     <span class="cmt"># scaffold 新 change 目錄</span>
+│       ├── schemas.ts        <span class="cmt"># 列出可用 schema</span>
+│       ├── templates.ts      <span class="cmt"># 列出 template 路徑</span>
+│       └── shared.ts         <span class="cmt"># 共用驗證 (change/schema 存在)</span>
+│
+├── <span class="dir">core/</span>                 <span class="cmt"># 純邏輯, 可獨立測試</span>
+│   ├── archive.ts            <span class="cmt"># change → archive + 合併回 spec</span>
+│   ├── init.ts               <span class="cmt"># openspec init, ~780 行 (核心)</span>
+│   ├── update.ts             <span class="cmt"># 更新已安裝的 skill/command</span>
+│   ├── list.ts               <span class="cmt"># changes/specs 列表</span>
+│   ├── view.ts               <span class="cmt"># 互動式 dashboard</span>
+│   ├── config.ts             <span class="cmt"># AI_TOOLS 表 (28 個 AI 工具)</span>
+│   ├── config-prompts.ts     <span class="cmt"># config.yaml 的 prompt + serialize</span>
+│   ├── config-schema.ts      <span class="cmt"># zod schema for config</span>
+│   ├── global-config.ts      <span class="cmt"># XDG 全域設定</span>
+│   ├── project-config.ts     <span class="cmt"># 專案 openspec/config.yaml</span>
+│   ├── profiles.ts           <span class="cmt"># core vs custom profile, workflow id 列表</span>
+│   ├── available-tools.ts    <span class="cmt"># 從 disk 偵測已存在的 AI 工具目錄</span>
+│   ├── migration.ts          <span class="cmt"># 既有專案升級邏輯</span>
+│   ├── legacy-cleanup.ts     <span class="cmt"># 偵測並清理舊版 artifact</span>
+│   ├── specs-apply.ts        <span class="cmt"># archive 時把 delta 套用回 spec</span>
+│   ├── profile-sync-drift.ts <span class="cmt"># 偵測 profile 與實際檔案不一致</span>
+│   ├── <span class="dir">parsers/</span>              <span class="cmt"># markdown → 結構化資料</span>
+│   ├── <span class="dir">validation/</span>           <span class="cmt"># zod + 額外規則</span>
+│   ├── <span class="dir">schemas/</span>              <span class="cmt"># spec/change zod schema</span>
+│   ├── <span class="dir">artifact-graph/</span>       <span class="cmt"># schema.yaml 載入 + 拓樸排序</span>
+│   ├── <span class="dir">command-generation/</span>   <span class="cmt"># 28 個 AI 工具的 adapter</span>
+│   ├── <span class="dir">completions/</span>          <span class="cmt"># shell completion 產生器</span>
+│   ├── <span class="dir">templates/workflows/</span>  <span class="cmt"># 每個 workflow 的 skill + command 模板</span>
+│   ├── <span class="dir">shared/</span>               <span class="cmt"># skill 產生共用</span>
+│   ├── <span class="dir">styles/</span>               <span class="cmt"># 終端機 palette</span>
+│   ├── <span class="dir">converters/</span>           <span class="cmt"># json-converter</span>
+│   └── index.ts
+│
+├── <span class="dir">prompts/</span>
+│   └── searchable-multi-select.ts <span class="cmt"># 自訂 inquirer 元件</span>
+├── <span class="dir">ui/</span>
+│   ├── ascii-patterns.ts
+│   └── welcome-screen.ts     <span class="cmt"># init 時的動畫歡迎畫面</span>
+└── <span class="dir">utils/</span>                 <span class="cmt"># file-system, shell-detection, glob 等跨平台工具</span>
+</pre>
+        </div>
+      </details>
+
+      <details>
+        <summary><code>openspec/</code> (專案自己 dogfood 用) <span class="pill o" style="margin-left:8px">案例</span></summary>
+        <div class="inner">
+          <p>OpenSpec 本身用 OpenSpec 管理. 這個目錄是「事實規格 + 進行中變更」的真實範例:</p>
+<pre class="tree">
+<span class="dir">openspec/</span>
+├── config.yaml           <span class="cmt"># schema: spec-driven + 跨平台 rules</span>
+├── <span class="dir">specs/</span>                <span class="cmt"># 既有事實規格 (35+ capability)</span>
+│   ├── cli-init/spec.md
+│   ├── cli-archive/spec.md
+│   ├── artifact-graph/spec.md
+│   └── ...
+├── <span class="dir">changes/</span>              <span class="cmt"># 進行中的變更提案</span>
+│   ├── add-artifact-regeneration-support/
+│   │   ├── proposal.md
+│   │   ├── design.md
+│   │   ├── tasks.md
+│   │   └── specs/...
+│   ├── ...
+│   └── <span class="dir">archive/</span>          <span class="cmt"># 完成後歸檔 (依日期前綴)</span>
+└── <span class="dir">explorations/</span>         <span class="cmt"># 還沒成形的點子 (workspace-roadmap, ...)</span>
+</pre>
+        </div>
+      </details>
+    </section>
+
+    <!-- 5 ENTRY -->
+    <section id="entry">
+      <h2><span class="num">05</span>入口點 (Entry Points)</h2>
+      <p>OpenSpec 有 <strong>三個入口</strong>, 分別對應不同使用情境:</p>
+
+      <div class="grid cols-3">
+        <div class="card">
+          <h4 style="margin-top:0">① CLI</h4>
+          <p style="margin:0 0 8px"><code>npm i -g @fission-ai/openspec</code> 後在 PATH 取得 <code>openspec</code>:</p>
+          <pre class="language-bash"><code>npm bin
+  → bin/openspec.js  (package.json#bin)
+       → dist/cli/index.js  (Commander 註冊)</code></pre>
+        </div>
+        <div class="card">
+          <h4 style="margin-top:0">② Library</h4>
+          <p style="margin:0 0 8px">作為 Node 套件 import (用得不多, 但已暴露):</p>
+          <pre class="language-js"><code>import * as openspec from '@fission-ai/openspec';
+// 內含 cli + core
+// 主要是 getGlobalConfig() 之類</code></pre>
+        </div>
+        <div class="card">
+          <h4 style="margin-top:0">③ Nix Flake</h4>
+          <p style="margin:0 0 8px">NixOS 使用者可透過 flake 安裝:</p>
+          <pre class="language-bash"><code>nix run github:Fission-AI/OpenSpec
+# 由 flake.nix 定義, CI 有跑驗證</code></pre>
+        </div>
+      </div>
+
+      <h3>CLI 入口檔逐行</h3>
+
+      <div class="card">
+<pre class="language-json"><code>// package.json
+{
+  "name": "@fission-ai/openspec",
+  "type": "module",
+  "bin": { "openspec": "./bin/openspec.js" },
+  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
+  "files": ["dist", "bin", "schemas", "scripts/postinstall.js"]
+}</code></pre>
+        <p class="caption">package.json 三個關鍵欄位: <code>bin</code> 註冊 CLI, <code>exports</code> 給 library, <code>files</code> 控制 npm 打包內容</p>
+      </div>
+
+      <div class="card">
+<pre class="language-js"><code>// bin/openspec.js  ← 整個檔案就這兩行
+#!/usr/bin/env node
+import '../dist/cli/index.js';</code></pre>
+      </div>
+
+      <div class="callout tip">
+        <strong>為什麼這樣設計?</strong>
+        <ul style="margin:8px 0 0">
+          <li>bin shim 永遠是 JS, 不會被 TS 編譯; 避免 build 後 shebang 遺失.</li>
+          <li>真正的程式碼放在 <code>dist/cli/index.js</code>, 由 tsc 從 <code>src/cli/index.ts</code> 產生.</li>
+          <li><code>scripts/postinstall.js</code> 在 npm install 後執行, 提示使用者 opt-in shell completion.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 6 BUILD -->
+    <section id="build">
+      <h2><span class="num">06</span>Build 與打包</h2>
+      <p>OpenSpec 的 build 流程刻意保持「<strong>tsc-only</strong>」: 沒有 esbuild, rollup, tsup. 跑得快、零 bundling magic、debug 時 stack trace 乾淨.</p>
+
+      <div class="mermaid">
+flowchart LR
+  A[src/**/*.ts] -->|"node build.js"| B[清空 dist/]
+  B --> C["tsc --project tsconfig.json"]
+  C --> D[dist/**/*.js<br/>+ .d.ts<br/>+ .map]
+  D -->|"pnpm pack"| E["@fission-ai/openspec-x.y.z.tgz<br/>包含 dist/, bin/, schemas/"]
+  E -->|"changeset publish"| F[npm registry]
+  style C fill:#1a2746,stroke:#58a6ff
+  style F fill:#0d2a1a,stroke:#7ee787
+      </div>
+
+      <h3>build.js 拆解</h3>
+      <div class="card">
+<pre class="language-js"><code>// build.js (簡化)
+import { execFileSync } from 'child_process';
+import { existsSync, rmSync } from 'fs';
+
+if (existsSync('dist')) rmSync('dist', { recursive: true, force: true });
+
+// 用 local tsc, 避免全域版本不一致
+const tsc = require.resolve('typescript/bin/tsc');
+execFileSync(process.execPath, [tsc, '--version'], { stdio: 'inherit' });
+execFileSync(process.execPath, [tsc], { stdio: 'inherit' });</code></pre>
+      </div>
+
+      <h3>tsconfig 關鍵設定</h3>
+      <table>
+        <thead><tr><th>選項</th><th>值</th><th>意義</th></tr></thead>
+        <tbody>
+          <tr><td><code>target</code></td><td>ES2022</td><td>原生 top-level await, structuredClone</td></tr>
+          <tr><td><code>module</code> + <code>moduleResolution</code></td><td>NodeNext</td><td>強制 import 加 <code>.js</code> 副檔名 (即使 src 是 .ts)</td></tr>
+          <tr><td><code>rootDir / outDir</code></td><td>src → dist</td><td>對應 npm <code>files</code> 設定</td></tr>
+          <tr><td><code>declaration + sourceMap</code></td><td>true</td><td>library 使用者可拿到 type, debug 可回到 .ts</td></tr>
+          <tr><td><code>strict</code></td><td>true</td><td>不允許 any 浮現</td></tr>
+        </tbody>
+      </table>
+
+      <h3>打包到 npm</h3>
+      <ul class="steps">
+        <li><code>pnpm run build</code> 產生 <code>dist/</code> 與 <code>.d.ts</code></li>
+        <li><code>prepare</code> hook 自動跑 build, 確保任何 install 都有 dist</li>
+        <li><code>files</code> 欄位過濾掉 <code>*.test.js</code>、<code>__tests__</code>、<code>*.map</code></li>
+        <li><code>scripts/pack-version-check.mjs</code> 驗證版本沒重複</li>
+        <li><code>changeset publish</code> 上 npm registry</li>
+        <li><code>postinstall</code> 在用戶端執行 <code>scripts/postinstall.js</code>, 提示 completion</li>
+      </ul>
+    </section>
+
+    <!-- 7 SCRIPTS -->
+    <section id="scripts">
+      <h2><span class="num">07</span>所有 npm scripts</h2>
+      <p>對應 <code>package.json#scripts</code>, 你會用到的每一個指令.</p>
+
+      <table>
+        <thead><tr><th>script</th><th>實際命令</th><th>功能</th><th>使用情境</th></tr></thead>
+        <tbody>
+          <tr><td><code>lint</code></td><td><code>eslint src/</code></td><td>flat config + typescript-eslint</td><td>PR 前</td></tr>
+          <tr><td><code>build</code></td><td><code>node build.js</code></td><td>清 dist + tsc</td><td>發布前, 或 dev:cli</td></tr>
+          <tr><td><code>dev</code></td><td><code>tsc --watch</code></td><td>監看編譯</td><td>長時間開發, 另一視窗執行 CLI</td></tr>
+          <tr><td><code>dev:cli</code></td><td><code>pnpm build && node bin/openspec.js</code></td><td>一次 build + 跑 CLI</td><td>快速試一次</td></tr>
+          <tr><td><code>test</code></td><td><code>vitest run</code></td><td>單次跑全部</td><td>CI / 提交前</td></tr>
+          <tr><td><code>test:watch</code></td><td><code>vitest</code></td><td>watch 模式</td><td>TDD</td></tr>
+          <tr><td><code>test:ui</code></td><td><code>vitest --ui</code></td><td>瀏覽器 UI</td><td>debug 失敗測試</td></tr>
+          <tr><td><code>test:coverage</code></td><td><code>vitest --coverage</code></td><td>產生 coverage 報告</td><td>CI 上傳 artifact</td></tr>
+          <tr><td><code>test:postinstall</code></td><td><code>node scripts/postinstall.js</code></td><td>手動測試 postinstall</td><td>release 驗收</td></tr>
+          <tr><td><code>prepare</code></td><td><code>pnpm run build</code></td><td>npm lifecycle 自動 build</td><td>install/publish 都會跑</td></tr>
+          <tr><td><code>prepublishOnly</code></td><td><code>pnpm run build</code></td><td>publish 前再保險 build 一次</td><td>npm publish 自動觸發</td></tr>
+          <tr><td><code>postinstall</code></td><td><code>node scripts/postinstall.js</code></td><td>提示 shell completion</td><td>使用者 install 後</td></tr>
+          <tr><td><code>check:pack-version</code></td><td><code>node scripts/pack-version-check.mjs</code></td><td>確認版本未重覆</td><td>release CI 第一步</td></tr>
+          <tr><td><code>release</code></td><td><code>pnpm run release:ci</code></td><td>本地觸發 release</td><td>少用</td></tr>
+          <tr><td><code>release:ci</code></td><td>check + <code>changeset publish</code></td><td>正式發布</td><td>GitHub Action 用</td></tr>
+          <tr><td><code>changeset</code></td><td><code>changeset</code></td><td>互動建立版本紀錄</td><td>合 PR 前</td></tr>
+        </tbody>
+      </table>
+
+      <h3>scripts/ 目錄</h3>
+      <table>
+        <thead><tr><th>檔案</th><th>用途</th><th>觸發點</th></tr></thead>
+        <tbody>
+          <tr><td><code>postinstall.js</code></td><td>提示 opt-in completion, 自動 skip CI</td><td><code>npm install</code> 後</td></tr>
+          <tr><td><code>pack-version-check.mjs</code></td><td>用 npm view 比對版本</td><td>release 前</td></tr>
+          <tr><td><code>test-postinstall.sh</code></td><td>本地模擬 postinstall</td><td>手動</td></tr>
+          <tr><td><code>update-flake.sh</code></td><td>更新 flake.nix 內 hash</td><td>flake/package 變更</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 8 CLI -->
+    <section id="cli">
+      <h2><span class="num">08</span>CLI 命令地圖</h2>
+      <p>所有命令都在 <code>src/cli/index.ts</code> 註冊. 命令分成「動詞優先 (verb-first)」與少數 deprecated 的「名詞優先 (noun-first)」.</p>
+
+      <div class="mermaid">
+flowchart LR
+  ROOT["openspec"] --> INIT[init]
+  ROOT --> UPDATE[update]
+  ROOT --> LIST[list]
+  ROOT --> VIEW[view]
+  ROOT --> SHOW[show]
+  ROOT --> VAL[validate]
+  ROOT --> ARC[archive]
+  ROOT --> FB[feedback]
+  ROOT --> CFG[config]
+  ROOT --> SCH[schema]
+  ROOT --> SP[spec]
+  ROOT --> CMP[completion]
+  ROOT --> WF["Workflow 群"]
+  WF --> STAT[status]
+  WF --> INS[instructions]
+  WF --> TPL[templates]
+  WF --> SCS[schemas]
+  WF --> NEW["new change"]
+  ROOT --> DEP["(deprecated) change"]
+  DEP --> DS[show/list/validate]
+
+  style INIT fill:#1a2746,stroke:#58a6ff
+  style WF fill:#0d2a1a,stroke:#7ee787
+  style DEP fill:#2a1a1a,stroke:#f85149,color:#f85149
+      </div>
+
+      <h3>每個命令說明 (依使用頻率)</h3>
+      <table>
+        <thead><tr><th>命令</th><th>flag 摘要</th><th>呼叫的 core</th><th>說明</th></tr></thead>
+        <tbody>
+          <tr><td><code>openspec init [path]</code></td><td><code>--tools</code> <code>--force</code> <code>--profile</code></td><td><code>InitCommand</code></td><td>在專案建立 <code>openspec/</code> 與 28+ 工具 adapter 對應的 skill/command 檔</td></tr>
+          <tr><td><code>openspec update [path]</code></td><td><code>--force</code></td><td><code>UpdateCommand</code></td><td>把現有的 skill/command 更新到目前 OpenSpec 版本</td></tr>
+          <tr><td><code>openspec list</code></td><td><code>--specs --changes --sort --json</code></td><td><code>ListCommand</code></td><td>列出 changes (預設) 或 specs</td></tr>
+          <tr><td><code>openspec view</code></td><td>—</code></td><td><code>ViewCommand</code></td><td>互動式 dashboard, 顯示所有 spec/change</td></tr>
+          <tr><td><code>openspec show [item]</code></td><td><code>--json --type --requirements -r</code></td><td><code>ShowCommand</code></td><td>顯示某個 change 或 spec; 模糊比對名稱</td></tr>
+          <tr><td><code>openspec validate [item]</code></td><td><code>--all --changes --specs --strict --json --concurrency</code></td><td><code>ValidateCommand</code></td><td>跑 zod schema 與額外規則</td></tr>
+          <tr><td><code>openspec archive [name]</code></td><td><code>-y --skip-specs --no-validate</code></td><td><code>ArchiveCommand</code></td><td>change → archive/ + 合併 delta 回 specs</td></tr>
+          <tr><td><code>openspec new change &lt;name&gt;</code></td><td><code>--description --schema</code></td><td><code>newChangeCommand</code></td><td>scaffold 新 change 目錄結構</td></tr>
+          <tr><td><code>openspec status</code></td><td><code>--change --schema --json</code></td><td><code>statusCommand</code></td><td>顯示 artifact 完成狀態 (ready/done/blocked)</td></tr>
+          <tr><td><code>openspec instructions [artifact]</code></td><td><code>--change --schema --json</code></td><td><code>instructionsCommand</code></td><td>輸出給 AI 看的「請建立 X」指令</td></tr>
+          <tr><td><code>openspec templates</code></td><td><code>--schema --json</code></td><td><code>templatesCommand</code></td><td>列出 schema 內每個 artifact 的 template 路徑</td></tr>
+          <tr><td><code>openspec schemas</code></td><td><code>--json</code></td><td><code>schemasCommand</code></td><td>列出可用的 workflow schema</td></tr>
+          <tr><td><code>openspec config ...</code></td><td>(子命令)</td><td>registerConfigCommand</td><td>讀寫全域 / 專案設定 (profile, delivery, workflows)</td></tr>
+          <tr><td><code>openspec schema ...</code></td><td>(子命令)</td><td>registerSchemaCommand</td><td>fork / init / which / validate workflow schema</td></tr>
+          <tr><td><code>openspec spec ...</code></td><td>(子命令)</td><td>registerSpecCommand</td><td>spec list / show / validate (verb-first 形式)</td></tr>
+          <tr><td><code>openspec completion ...</code></td><td><code>generate / install / uninstall</code></td><td><code>CompletionCommand</code></td><td>bash, zsh, fish, pwsh 自動補全</td></tr>
+          <tr><td><code>openspec feedback &lt;msg&gt;</code></td><td><code>--body</code></td><td><code>FeedbackCommand</code></td><td>送出回饋連結到 GitHub issue</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout warn">
+        <strong>Deprecated:</strong> <code>openspec change show/list/validate</code> 與 <code>experimental</code> 仍在但會列警告. 新功能請寫到 verb-first 命令.
+      </div>
+    </section>
+
+    <!-- 9 INIT FLOW -->
+    <section id="init-flow">
+      <h2><span class="num">09</span><code>init</code> 完整流程</h2>
+      <p>這是整套工具最有料的命令, 也是 <code>InitCommand</code> (約 780 行) 做的事情. 拆成 9 個 phase:</p>
+
+      <div class="mermaid">
+sequenceDiagram
+  autonumber
+  actor U as 使用者
+  participant CLI as cli/index.ts
+  participant IC as InitCommand
+  participant FS as FileSystem
+  participant CG as command-generation
+  participant TPL as templates
+  U->>CLI: openspec init
+  CLI->>IC: new InitCommand(opts)
+  IC->>FS: 1. validate() 檢查目錄 + 寫入權限
+  IC->>FS: 2. detectLegacyArtifacts() 偵測舊版檔案
+  IC->>U: 互動: 確認清理舊檔?
+  IC->>FS: 3. cleanupLegacyArtifacts() 移除舊 marker
+  IC->>FS: 4. getAvailableTools() 掃描 .claude/, .cursor/, ...
+  IC->>FS: 5. migrateIfNeeded() 既有專案升級
+  IC->>U: 6. searchableMultiSelect 選工具
+  IC->>FS: 7. createDirectoryStructure() 建 openspec/ 與子目錄
+  loop 每個選到的工具
+    IC->>TPL: getSkillTemplates(workflows)
+    IC->>TPL: getCommandContents(workflows)
+    IC->>CG: CommandAdapterRegistry.get(toolId)
+    IC->>CG: generateCommands(contents, adapter)
+    CG-->>IC: GeneratedCommand[]
+    IC->>FS: 8. writeFile() 寫到 .{tool}/skills/ + 對應路徑
+  end
+  IC->>FS: 9. createConfig() 寫 openspec/config.yaml
+  IC->>U: 顯示成功訊息 + 提示重啟 IDE
+      </div>
+
+      <h3>關鍵設計點</h3>
+      <div class="grid cols-2">
+        <div class="card tight">
+          <h4>Profile × Delivery 矩陣</h4>
+          <p style="margin:0">Profile (要哪些 workflow) 來自 global-config; Delivery (skills/commands/both) 也是. 兩者組合決定 init 真正寫出哪些檔.</p>
+        </div>
+        <div class="card tight">
+          <h4>Extend mode</h4>
+          <p style="margin:0">若 <code>openspec/</code> 已存在, init 走 extend mode: 不顯示 welcome screen, 不建 config (除非沒有), 只刷新 skill/command.</p>
+        </div>
+        <div class="card tight">
+          <h4>非互動模式</h4>
+          <p style="margin:0">沒 TTY 或 <code>--tools</code> 帶值時走 non-interactive. 沒指定且偵測不到任何工具會直接拋錯, 不會默默裝空的.</p>
+        </div>
+        <div class="card tight">
+          <h4>刪除舊檔</h4>
+          <p style="margin:0">切換 delivery 時自動清掉另一邊的檔案: 如從 both → commands, 會刪掉 .{tool}/skills/openspec-* 目錄.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10 WORKFLOW -->
+    <section id="workflow">
+      <h2><span class="num">10</span>工作流引擎 (Workflow Engine)</h2>
+      <p>OpenSpec 真正的核心抽象是「<strong>workflow schema</strong>」, 定義在 <code>schemas/spec-driven/schema.yaml</code>, 也允許專案 fork 出自訂 schema 到 <code>openspec/schemas/&lt;name&gt;/</code>.</p>
+
+      <h3>schema.yaml 結構</h3>
+      <div class="card">
+<pre class="language-yaml"><code>name: spec-driven
+version: 1
+description: Default OpenSpec workflow - proposal → specs → design → tasks
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    template: proposal.md
+    instruction: |
+      Create the proposal document that establishes WHY...
+    requires: []        # 沒有依賴, 第一個產生
+
+  - id: specs
+    generates: "specs/**/*.md"
+    template: spec.md
+    instruction: |
+      Create specification files...
+    requires: [proposal]
+
+  - id: design
+    generates: design.md
+    template: design.md
+    instruction: |
+      Create the design document...
+    requires: [proposal]
+
+  - id: tasks
+    generates: tasks.md
+    template: tasks.md
+    instruction: |
+      Create the task list...
+    requires: [specs, design]   # 必須等兩者都做完
+
+apply:
+  requires: [tasks]
+  tracks: tasks.md
+  instruction: |
+    Read context files, work through pending tasks...</code></pre>
+      </div>
+
+      <h3>每個 artifact 的角色</h3>
+      <table>
+        <thead><tr><th>artifact</th><th>generates</th><th>requires</th><th>本質</th></tr></thead>
+        <tbody>
+          <tr><td><code>proposal</code></td><td><code>proposal.md</code></td><td>—</td><td>「為什麼要做」+ 列出 capabilities</td></tr>
+          <tr><td><code>specs</code></td><td><code>specs/**/*.md</code></td><td>proposal</td><td>「要做什麼」: ADDED / MODIFIED / REMOVED / RENAMED delta</td></tr>
+          <tr><td><code>design</code></td><td><code>design.md</code></td><td>proposal</td><td>「怎麼做」: 技術決策、trade-off</td></tr>
+          <tr><td><code>tasks</code></td><td><code>tasks.md</code></td><td>specs + design</td><td>「按什麼順序做」: <code>- [ ]</code> checkbox 列表</td></tr>
+          <tr><td><code>apply</code></td><td>(實作)</td><td>tasks</td><td>「逐項完成 checkbox」</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout info">
+        <strong>為什麼用 schema 不是寫死?</strong><br/>
+        你可以 fork 一份自己的 schema (例如加上 <code>review</code>、<code>migration</code> artifact), 整套 CLI 都自動支援 — status, instructions, templates 全部從 schema 推導.
+      </div>
+    </section>
+
+    <!-- 11 ARTIFACT GRAPH -->
+    <section id="artifact">
+      <h2><span class="num">11</span>Artifact Graph 與狀態機</h2>
+      <p><code>src/core/artifact-graph/</code> 把 schema.yaml 轉成「有向相依圖」, 並計算每個 artifact 在某個 change 目錄裡的狀態.</p>
+
+      <h3>三種狀態</h3>
+      <div class="grid cols-3">
+        <div class="card tight"><h4 style="color:var(--accent-2);margin-top:0">[x] done</h4><p style="margin:0">檔案存在且通過 validation</p></div>
+        <div class="card tight"><h4 style="color:var(--accent-3);margin-top:0">[ ] ready</h4><p style="margin:0">依賴全部 done, 可以開始</p></div>
+        <div class="card tight"><h4 style="color:var(--danger);margin-top:0">[-] blocked</h4><p style="margin:0">至少一個依賴還沒 done</p></div>
+      </div>
+
+      <h3>graph 演算法</h3>
+      <p>建構時用 Kahn 拓樸排序產生 build order; 查詢時用「依賴全部在 completedSet 內」判斷 ready.</p>
+
+      <div class="card">
+<pre class="language-ts"><code>// src/core/artifact-graph/graph.ts (節錄)
+export class ArtifactGraph {
+  static fromYaml(path: string) { return new ArtifactGraph(loadSchema(path)); }
+
+  getBuildOrder(): string[] {
+    // Kahn topological sort
+    // 從 inDegree=0 開始, 逐步加入結果
+  }
+
+  getReadyArtifacts(completed: CompletedSet): Artifact[] {
+    return this.getAllArtifacts().filter(a =>
+      !completed.has(a.id) && a.requires.every(r => completed.has(r))
+    );
+  }
+
+  getBlocked(completed: CompletedSet): BlockedArtifacts { /* ... */ }
+}</code></pre>
+      </div>
+
+      <div class="mermaid">
+flowchart LR
+  P([proposal]):::done --> S([specs]):::ready
+  P --> D([design]):::ready
+  S --> T([tasks]):::blocked
+  D --> T
+  T --> A([apply]):::blocked
+  classDef done fill:#0d2a1a,stroke:#7ee787,color:#7ee787
+  classDef ready fill:#2a2b1a,stroke:#ffa657,color:#ffa657
+  classDef blocked fill:#2a1a1a,stroke:#f85149,color:#f85149
+      </div>
+      <p class="caption">假設 proposal 已完成: specs / design 同時 ready, tasks / apply 仍 blocked</p>
+    </section>
+
+    <!-- 12 VALIDATION -->
+    <section id="validation">
+      <h2><span class="num">12</span>Validation 系統</h2>
+      <p>三層: <strong>markdown parser → Zod schema → 客製規則</strong>. 任何一層失敗都會回傳 <code>ValidationReport</code> 結構化結果.</p>
+
+      <div class="mermaid">
+flowchart TB
+  MD["markdown 字串"] -->|MarkdownParser / ChangeParser| AST[結構化 spec / change 物件]
+  AST -->|SpecSchema / ChangeSchema| Z["zod safeParse"]
+  Z -->|失敗| ISS[ValidationIssue]
+  AST -->|applySpecRules / applyChangeRules| RU[自訂規則檢查]
+  RU -->|失敗| ISS
+  ISS --> RPT["ValidationReport<br/>{ valid, issues[] }"]
+      </div>
+
+      <h3>parsers 拆解</h3>
+      <table>
+        <thead><tr><th>檔案</th><th>輸入</th><th>輸出</th></tr></thead>
+        <tbody>
+          <tr><td><code>markdown-parser.ts</code></td><td>spec markdown</td><td><code>Spec</code> 物件 (capability, requirements, scenarios)</td></tr>
+          <tr><td><code>change-parser.ts</code></td><td>change markdown</td><td><code>Change</code> 物件 (deltas, why, impact)</td></tr>
+          <tr><td><code>requirement-blocks.ts</code></td><td>delta 區塊</td><td>ADDED / MODIFIED / REMOVED / RENAMED 分組</td></tr>
+          <tr><td><code>spec-structure.ts</code></td><td>main spec markdown</td><td>結構問題清單 (h3/h4 錯誤, 缺 scenario)</td></tr>
+        </tbody>
+      </table>
+
+      <h3>常見錯誤類別</h3>
+      <table>
+        <thead><tr><th>類別</th><th>例子</th><th>來源</th></tr></thead>
+        <tbody>
+          <tr><td>結構錯誤</td><td>scenario 用 3 個 hashtag (要 4 個)</td><td>spec-structure.ts</td></tr>
+          <tr><td>schema 錯誤</td><td>requirement 沒有 scenario</td><td>SpecSchema (zod)</td></tr>
+          <tr><td>長度錯誤</td><td>purpose 太短 / requirement 太長</td><td>validation/constants.ts</td></tr>
+          <tr><td>delta 錯誤</td><td>MODIFIED 但找不到對應的 main spec</td><td>change validator</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 13 ADAPTER -->
+    <section id="adapter">
+      <h2><span class="num">13</span>AI 工具 Adapter 系統</h2>
+      <p>OpenSpec 一次支援 <strong>28 個</strong> AI 工具. 機制是「<strong>tool-agnostic 內容 + per-tool 格式化 adapter</strong>」.</p>
+
+      <h3>核心抽象</h3>
+      <div class="card">
+<pre class="language-ts"><code>// src/core/command-generation/types.ts
+export interface CommandContent {
+  id: string;          // 'explore'
+  name: string;        // 'OpenSpec Explore'
+  description: string;
+  category: string;
+  tags: string[];
+  body: string;        // markdown 指令本體
+}
+
+export interface ToolCommandAdapter {
+  toolId: string;
+  getFilePath(commandId: string): string;       // 例如 .claude/commands/opsx/explore.md
+  formatFile(content: CommandContent): string;  // 加上 frontmatter
+}</code></pre>
+      </div>
+
+      <h3>三個 adapter 範例</h3>
+
+      <div class="tabs">
+        <div class="tab-head">
+          <button class="active" data-tab="claude">Claude Code</button>
+          <button data-tab="cursor">Cursor</button>
+          <button data-tab="codex">Codex</button>
+        </div>
+        <div class="tab-body">
+          <div class="tab-panel active" data-tab="claude">
+            <p><strong>檔案位置:</strong> <code>.claude/commands/opsx/&lt;id&gt;.md</code> · YAML frontmatter: name, description, category, tags</p>
+<pre class="language-ts"><code>export const claudeAdapter: ToolCommandAdapter = {
+  toolId: 'claude',
+  getFilePath(id) {
+    return path.join('.claude', 'commands', 'opsx', `${id}.md`);
+  },
+  formatFile(c) {
+    return `---
+name: ${escapeYamlValue(c.name)}
+description: ${escapeYamlValue(c.description)}
+category: ${escapeYamlValue(c.category)}
+tags: ${formatTagsArray(c.tags)}
+---
+
+${c.body}
+`;
+  },
+};</code></pre>
+          </div>
+          <div class="tab-panel" data-tab="cursor">
+            <p><strong>檔案位置:</strong> <code>.cursor/commands/&lt;id&gt;.md</code> · Cursor 用 mdc 格式, 與 Claude 略有差異</p>
+            <p>結構相同, 但 frontmatter 與路徑會根據 <code>.cursor/</code> 規範調整. 看 <code>src/core/command-generation/adapters/cursor.ts</code>.</p>
+          </div>
+          <div class="tab-panel" data-tab="codex">
+            <p><strong>特殊處: 全域 scope.</strong> Codex 不寫到專案內, 寫到使用者全域 prompt 目錄, 因此 <code>getFilePath</code> 回傳「絕對路徑」.</p>
+            <p>InitCommand 看到 <code>path.isAbsolute()</code> 為 true 時不會再 prepend 專案根目錄.</p>
+          </div>
+        </div>
+      </div>
+
+      <h3>支援的 28 個工具</h3>
+      <div class="card tight">
+        <p style="margin:0;color:var(--text-dim);font-size:13px">
+          <span class="pill b">amazon-q</span><span class="pill b">antigravity</span><span class="pill b">auggie</span><span class="pill b">bob</span><span class="pill b">claude</span><span class="pill b">cline</span><span class="pill b">codex</span><span class="pill b">forgecode</span><span class="pill b">codebuddy</span><span class="pill b">continue</span><span class="pill b">costrict</span><span class="pill b">crush</span><span class="pill b">cursor</span><span class="pill b">factory</span><span class="pill b">gemini</span><span class="pill b">github-copilot</span><span class="pill b">iflow</span><span class="pill b">junie</span><span class="pill b">kilocode</span><span class="pill b">kiro</span><span class="pill b">opencode</span><span class="pill b">pi</span><span class="pill b">qoder</span><span class="pill b">lingma</span><span class="pill b">qwen</span><span class="pill b">roocode</span><span class="pill b">trae</span><span class="pill b">windsurf</span>
+        </p>
+      </div>
+
+      <p>全部定義在 <code>src/core/config.ts#AI_TOOLS</code>, adapter 實作在 <code>src/core/command-generation/adapters/*.ts</code>, 由 <code>registry.ts</code> 統一查表.</p>
+    </section>
+
+    <!-- 14 PROFILE -->
+    <section id="profile">
+      <h2><span class="num">14</span>Profile / Delivery 系統</h2>
+      <p>同樣是「分離關注點」的設計: <strong>Profile</strong> 決定要哪些 workflow, <strong>Delivery</strong> 決定怎麼交付.</p>
+
+      <div class="grid cols-2">
+        <div class="card">
+          <h4 style="margin-top:0">Profile</h4>
+          <ul style="margin:8px 0">
+            <li><span class="pill g">core</span> 預設 4 個 workflow: <code>propose</code>, <code>explore</code>, <code>apply</code>, <code>archive</code></li>
+            <li><span class="pill o">custom</span> 由 <code>config.json</code> 內的 <code>workflows: []</code> 自選</li>
+          </ul>
+          <p style="margin:0;color:var(--text-dim);font-size:13px">完整可用 workflow: propose, explore, new, continue, apply, ff, sync, archive, bulk-archive, verify, onboard</p>
+        </div>
+        <div class="card">
+          <h4 style="margin-top:0">Delivery</h4>
+          <ul style="margin:8px 0">
+            <li><span class="pill b">both</span> 同時產生 skill + slash command (預設)</li>
+            <li><span class="pill p">skills</span> 只產生 agent skill</li>
+            <li><span class="pill o">commands</span> 只產生 slash command</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>全域設定檔位置 (XDG)</h3>
+      <table>
+        <thead><tr><th>OS</th><th>路徑</th></tr></thead>
+        <tbody>
+          <tr><td>Linux / macOS</td><td><code>~/.config/openspec/config.json</code> (或 <code>$XDG_CONFIG_HOME/openspec/</code>)</td></tr>
+          <tr><td>Windows</td><td><code>%APPDATA%\openspec\config.json</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3>設定矩陣對應的產出</h3>
+      <table>
+        <thead><tr><th></th><th>delivery: skills</th><th>delivery: commands</th><th>delivery: both</th></tr></thead>
+        <tbody>
+          <tr><td>profile: core</td><td>4 個 SKILL.md</td><td>4 個 slash command 檔</td><td>兩者都有</td></tr>
+          <tr><td>profile: custom (選 11)</td><td>11 個 SKILL.md</td><td>11 個 slash command 檔</td><td>兩者都有</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 15 EXTEND -->
+    <section id="extend">
+      <h2><span class="num">15</span>如何擴展功能</h2>
+      <p>三種最常見的擴展需求, 每種都有對應的「最小修改集合」.</p>
+
+      <h3>A. 新增一個 CLI 命令</h3>
+      <ol class="steps">
+        <li>在 <code>src/commands/</code> 建立 <code>my-cmd.ts</code>, 匯出一個 class 或 function</li>
+        <li>在 <code>src/cli/index.ts</code> 註冊 <code>program.command('my-cmd')</code></li>
+        <li>把純邏輯放到 <code>src/core/</code> (方便單測)</li>
+        <li>在 <code>test/commands/</code> 寫 vitest 測試</li>
+        <li>跑 <code>pnpm build && node bin/openspec.js my-cmd</code> 驗證</li>
+      </ol>
+
+      <details>
+        <summary>範例: 新增 <code>openspec hello</code></summary>
+        <div class="inner">
+<pre class="language-ts"><code>// src/commands/hello.ts
+export class HelloCommand {
+  async execute(name = 'world') {
+    console.log(`Hello, ${name}!`);
+  }
+}
+
+// src/cli/index.ts (新增)
+import { HelloCommand } from '../commands/hello.js';
+program
+  .command('hello [name]')
+  .description('Say hello')
+  .action(async (name?: string) => {
+    await new HelloCommand().execute(name);
+  });</code></pre>
+        </div>
+      </details>
+
+      <h3>B. 新增一個 AI 工具 Adapter</h3>
+      <ol class="steps">
+        <li>在 <code>src/core/config.ts#AI_TOOLS</code> 加一行: <code>{ name, value, skillsDir, available: true }</code></li>
+        <li>在 <code>src/core/command-generation/adapters/&lt;tool&gt;.ts</code> 實作 <code>ToolCommandAdapter</code></li>
+        <li>在 <code>src/core/command-generation/adapters/factory.ts</code> + <code>registry.ts</code> 註冊</li>
+        <li>若該工具的 skill 目錄結構特別, 在 <code>src/core/init.ts</code> 的特殊處理區看是否需加例外</li>
+        <li>跑 <code>pnpm test</code>; 補 fixture 與 snapshot</li>
+      </ol>
+
+      <h3>C. 新增一個 Workflow Schema</h3>
+      <p>例如想加入 <code>review</code> 階段 (tasks 完成後要人 review 才能 apply):</p>
+      <ol class="steps">
+        <li>跑 <code>openspec schema fork my-schema</code>, 會複製預設 schema 到 <code>openspec/schemas/my-schema/</code></li>
+        <li>編輯 <code>schema.yaml</code>, 加新 artifact:
+<pre class="language-yaml" style="margin:8px 0"><code>  - id: review
+    generates: review.md
+    template: review.md
+    instruction: |
+      Document review findings...
+    requires: [tasks]</code></pre>
+        </li>
+        <li>在 <code>openspec/schemas/my-schema/templates/</code> 加 <code>review.md</code> template</li>
+        <li>修改 <code>apply.requires</code> 改成 <code>[review]</code></li>
+        <li>在 <code>openspec/config.yaml</code> 把 <code>schema:</code> 改成 <code>my-schema</code></li>
+        <li>跑 <code>openspec schemas</code> 確認被列出; <code>openspec instructions review --change xxx</code> 確認可產生</li>
+      </ol>
+
+      <h3>D. 新增一個 Workflow (skill + slash command)</h3>
+      <ol class="steps">
+        <li>在 <code>src/core/templates/workflows/</code> 建 <code>my-workflow.ts</code>, export <code>getMyWorkflowSkillTemplate()</code> + <code>getOpsxMyCommandTemplate()</code></li>
+        <li>在 <code>src/core/templates/skill-templates.ts</code> re-export</li>
+        <li>在 <code>src/core/profiles.ts#ALL_WORKFLOWS</code> 加入 id</li>
+        <li>在 <code>src/core/shared/</code> 的 <code>getSkillTemplates()</code> / <code>getCommandContents()</code> 對應加入</li>
+        <li>(可選) 在 <code>WORKFLOW_TO_SKILL_DIR</code> 映射加入</li>
+        <li>跑 <code>openspec update</code> 驗證它出現在 <code>.claude/skills/</code></li>
+      </ol>
+    </section>
+
+    <!-- 16 FORK -->
+    <section id="fork">
+      <h2><span class="num">16</span>客製化 / Fork 指南</h2>
+      <p>如果想做出「<strong>自己版本的 OpenSpec</strong>」, 建議按這個順序走:</p>
+
+      <div class="mermaid">
+flowchart TB
+  S[1. 評估保留 vs 改寫範圍] --> A[2. fork repo + 重新命名 package]
+  A --> B[3. 確認 schema 是否要客製]
+  B --> C[4. 客製 workflow templates]
+  C --> D[5. 調整 AI 工具支援清單]
+  D --> E[6. 改 init 預設 profile / delivery]
+  E --> F[7. 改 brand: welcome screen, palette, README]
+  F --> G[8. 重設 changesets + CI + npm scope]
+  G --> H[9. 自家 dogfood: 在 openspec/ 跑 init]
+      </div>
+
+      <h3>建議保留</h3>
+      <div class="grid cols-2">
+        <div class="card tight">
+          <h4 style="margin-top:0;color:var(--accent-2)">穩定且通用</h4>
+          <ul style="margin:4px 0">
+            <li>artifact-graph + schema 載入</li>
+            <li>parsers (markdown / requirement-blocks)</li>
+            <li>validation 三層架構</li>
+            <li>Commander 註冊風格</li>
+            <li>command adapter pattern</li>
+            <li>跨平台 utils</li>
+          </ul>
+        </div>
+        <div class="card tight">
+          <h4 style="margin-top:0;color:var(--accent-3)">較容易改</h4>
+          <ul style="margin:4px 0">
+            <li><code>src/core/config.ts#AI_TOOLS</code> 工具清單</li>
+            <li><code>src/core/templates/workflows/*</code> 每個 workflow 內容</li>
+            <li><code>src/ui/welcome-screen.ts</code> brand</li>
+            <li><code>src/core/styles/palette.ts</code> 配色</li>
+            <li><code>schemas/spec-driven/</code> 預設 schema</li>
+            <li><code>src/core/profiles.ts</code> 預設 workflow 組合</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>逐步操作</h3>
+      <details>
+        <summary>第 1 步: package.json 重新命名</summary>
+        <div class="inner">
+<pre class="language-json"><code>{
+  "name": "@your-scope/your-cli",
+  "version": "0.1.0",
+  "bin": { "your-cli": "./bin/your-cli.js" },
+  ...
+}</code></pre>
+          <p>記得改 <code>bin/openspec.js</code> 檔名 + 對應 import path. 也要改 GitHub repo URL.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>第 2 步: 客製 workflow templates</summary>
+        <div class="inner">
+          <p>每個 workflow 的 SKILL.md 內容都在 <code>src/core/templates/workflows/</code>:</p>
+<pre class="language-ts"><code>// 範例: src/core/templates/workflows/explore.ts
+export function getExploreSkillTemplate() {
+  return {
+    dirName: 'openspec-explore',
+    name: 'openspec-explore',
+    description: '...',
+    body: `# Explore workflow ...`,  // ← 改這裡
+  };
+}</code></pre>
+          <p>改完後 <code>pnpm build</code>, 在測試專案跑 <code>openspec update --force</code> 就會刷新.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>第 3 步: 客製 schema 與 templates</summary>
+        <div class="inner">
+          <p>把 <code>schemas/spec-driven/</code> 複製成 <code>schemas/my-spec/</code>, 修改後在 init 預設指向新 schema:</p>
+<pre class="language-ts"><code>// src/core/init.ts
+const DEFAULT_SCHEMA = 'my-spec';   // ← 改這裡
+
+// src/commands/workflow/shared.ts
+export const DEFAULT_SCHEMA = 'my-spec';</code></pre>
+        </div>
+      </details>
+
+      <details>
+        <summary>第 4 步: 限縮 AI 工具清單</summary>
+        <div class="inner">
+          <p>多數團隊只用 1-3 個工具. 把 <code>src/core/config.ts#AI_TOOLS</code> 裡不需要的 entry 拿掉 / 設 <code>available: false</code>, 同時刪掉對應 adapter 檔. <code>InitCommand</code> 會自動只顯示剩下的選項.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>第 5 步: 改預設 profile 與 delivery</summary>
+        <div class="inner">
+<pre class="language-ts"><code>// src/core/global-config.ts
+const DEFAULT_CONFIG: GlobalConfig = {
+  profile: 'core',     // 或 'custom'
+  delivery: 'both',    // 改成 'skills' 或 'commands'
+  workflows: [],       // 若 profile='custom' 想預填
+  featureFlags: {},
+};</code></pre>
+        </div>
+      </details>
+
+      <details>
+        <summary>第 6 步: 改 brand</summary>
+        <div class="inner">
+          <ul>
+            <li><code>src/ui/welcome-screen.ts</code> ASCII art</li>
+            <li><code>src/ui/ascii-patterns.ts</code> 圖樣</li>
+            <li><code>src/core/styles/palette.ts</code> chalk 顏色</li>
+            <li>輸出訊息搜尋 "OpenSpec" 字串</li>
+          </ul>
+        </div>
+      </details>
+
+      <details>
+        <summary>第 7 步: 重新打通 release pipeline</summary>
+        <div class="inner">
+          <ol>
+            <li>刪掉 <code>.changeset/</code> 既有 entry, 留 config.json</li>
+            <li>把 <code>.github/workflows/release-prepare.yml</code> 內 secret/scope 改成自家</li>
+            <li>第一次發布: <code>pnpm changeset</code> → commit → CI 跑 release</li>
+          </ol>
+        </div>
+      </details>
+
+      <div class="callout tip">
+        <strong>實戰建議:</strong> 不要一次改全部. 先 fork → 改 brand → 跑通 init → 在實際專案 dogfood 兩週 → 再開始改 schema / workflow. 這個工具的價值來自一致性, 改太多反而失去重點.
+      </div>
+    </section>
+
+    <!-- 17 RELEASE -->
+    <section id="release">
+      <h2><span class="num">17</span>發布與 CI</h2>
+
+      <h3>GitHub Actions workflows</h3>
+      <table>
+        <thead><tr><th>workflow</th><th>觸發</th><th>內容</th></tr></thead>
+        <tbody>
+          <tr><td><code>ci.yml</code></td><td>PR / push main / merge_group</td><td>lint + 型別 + build + 跨平台測試 (linux/macOS/windows)</td></tr>
+          <tr><td><code>release-prepare.yml</code></td><td>main 有 changeset 待消化時</td><td>產生 "Version Packages" PR, merge 後自動 publish</td></tr>
+        </tbody>
+      </table>
+
+      <h3>CI 流程</h3>
+      <div class="mermaid">
+flowchart LR
+  PR[PR 進來] --> CHK[changes 偵測<br/>nix 檔有變動?]
+  PR --> TEST[ubuntu test<br/>build + vitest]
+  PR --> LINT[lint + tsc --noEmit + build artifact 檢查]
+  PR --> CS[validate changesets]
+  CHK -- nix --> NIX[nix flake validate]
+  TEST & LINT & NIX & CS --> OK[All checks passed]
+
+  PUSH[push main] --> MX[matrix test<br/>linux/macos/windows]
+  PUSH --> LINT2[lint]
+  MX & LINT2 --> OK2[All checks passed]
+      </div>
+
+      <h3>Release 流程 (changesets)</h3>
+      <ol class="steps">
+        <li>開發者 PR 內 <code>pnpm changeset</code> 建立一段 "patch/minor/major + summary" 紀錄</li>
+        <li>PR merge 進 main</li>
+        <li><code>release-prepare</code> workflow 偵測 changeset, 開一個 "Version Packages" PR 升版本 + 更新 CHANGELOG</li>
+        <li>維護者 review 並 merge</li>
+        <li>觸發 <code>release:ci</code>: <code>check:pack-version</code> → <code>changeset publish</code> → 發到 npm</li>
+      </ol>
+    </section>
+
+    <!-- 18 TESTING -->
+    <section id="testing">
+      <h2><span class="num">18</span>測試策略</h2>
+      <p>使用 Vitest, 設定在 <code>vitest.config.ts</code>, 有 <code>vitest.setup.ts</code> 全域 hook.</p>
+
+      <h3>測試目錄組織</h3>
+<pre class="tree">
+<span class="dir">test/</span>
+├── <span class="dir">cli-e2e/</span>            <span class="cmt"># 跑真 CLI binary, 行為驗證</span>
+│   └── basic.test.ts
+├── <span class="dir">commands/</span>           <span class="cmt"># 每個 command class 一個 spec</span>
+├── <span class="dir">core/</span>               <span class="cmt"># 純邏輯單測 (parsers, validator, graph...)</span>
+├── <span class="dir">prompts/</span>            <span class="cmt"># 自訂 multi-select 元件</span>
+├── <span class="dir">utils/</span>              <span class="cmt"># 跨平台 util</span>
+├── <span class="dir">fixtures/</span>           <span class="cmt"># 範例 markdown / config</span>
+├── <span class="dir">helpers/</span>            <span class="cmt"># tmpdir, mock fs 等</span>
+└── <span class="dir">specs/</span>              <span class="cmt"># 對 schema 本身的 sanity test</span>
+</pre>
+
+      <h3>測試金字塔</h3>
+      <div class="grid cols-3">
+        <div class="card tight"><h4 style="margin-top:0;color:var(--accent-2)">單元 (core/*)</h4><p style="margin:0">最多, 純函式; 不碰 FS</p></div>
+        <div class="card tight"><h4 style="margin-top:0;color:var(--accent-3)">整合 (commands/*)</h4><p style="margin:0">用 tmpdir, 跑完整 command class</p></div>
+        <div class="card tight"><h4 style="margin-top:0;color:var(--accent-4)">E2E (cli-e2e/*)</h4><p style="margin:0">spawn 真 binary, 驗 stdout/exit code</p></div>
+      </div>
+
+      <h3>跨平台原則 (來自 openspec/config.yaml)</h3>
+      <ul>
+        <li>所有路徑用 <code>path.join()</code> / <code>path.resolve()</code>, 永遠不寫死 <code>/</code></li>
+        <li>測試的 expected 路徑也要 <code>path.join()</code> 組</li>
+        <li>檔案大小寫敏感性要考慮</li>
+        <li>動到路徑邏輯時, 新增「Windows 路徑處理 scenario」</li>
+      </ul>
+    </section>
+
+    <footer>
+      OpenSpec v1.3.1 · 文件依 <code>main</code> 分支於 2026-05-18 生成 ·
+      原始碼: <a href="https://github.com/Fission-AI/OpenSpec" style="color:var(--accent)">github.com/Fission-AI/OpenSpec</a>
+    </footer>
+
+  </main>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      darkMode: true,
+      background: '#1a2230',
+      primaryColor: '#1a2746',
+      primaryTextColor: '#e6edf3',
+      primaryBorderColor: '#58a6ff',
+      lineColor: '#8b949e',
+      secondaryColor: '#2a1a35',
+      tertiaryColor: '#0d2a1a',
+      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+    },
+    flowchart: { curve: 'basis', padding: 14 },
+    sequence: { actorMargin: 80, messageMargin: 40 },
+  });
+</script>
+<script>
+  // Tab switching
+  document.querySelectorAll('.tabs').forEach(tabs => {
+    const heads = tabs.querySelectorAll('.tab-head button');
+    const panels = tabs.querySelectorAll('.tab-panel');
+    heads.forEach(h => h.addEventListener('click', () => {
+      const id = h.dataset.tab;
+      heads.forEach(x => x.classList.toggle('active', x.dataset.tab === id));
+      panels.forEach(p => p.classList.toggle('active', p.dataset.tab === id));
+    }));
+  });
+
+  // Active section in sidebar
+  const sections = document.querySelectorAll('section[id]');
+  const links = document.querySelectorAll('nav.toc a');
+  function setActive() {
+    let current = '';
+    const offset = 100;
+    sections.forEach(s => {
+      const rect = s.getBoundingClientRect();
+      if (rect.top - offset <= 0) current = s.id;
+    });
+    links.forEach(a => {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+    });
+  }
+  window.addEventListener('scroll', setActive, { passive: true });
+  setActive();
+</script>
+</body>
+</html>
